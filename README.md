@@ -35,8 +35,6 @@ edumatircs/
 │   ├── weak_areas.py               # Phase 3: Weak Area Detection (Priyansh Rathi - 1909)
 │   ├── trend_detection.py          # Phase 4: Multi-Term Trend Detection (Akshit Kumar - 1918)
 │   └── summary_and_output.py       # Phase 5-7: Summary & Output Generation (Rohil Maurya - 1936)
-├── tests/
-│   └── test_modules.py             # Phase 6: Pytest verification suite (7/7 pass)
 ├── main.py                         # Interactive Terminal CLI Application
 ├── .gitignore                      # Git ignore rules
 └── README.md                       # Project documentation
@@ -52,12 +50,6 @@ edumatircs/
 ```bash
 python main.py
 ```
-
-### 2. Run Automated Pytest Suite
-```bash
-pytest tests/test_modules.py -v
-```
-
 ---
 
 ## 🧠 Python Concepts Used
