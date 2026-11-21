@@ -44,12 +44,7 @@ edumatircs/
 
 ---
 
-## 🎨 Canva Presentation (PPT)
 
-An 8-slide presentation has been created in Canva for this project:
-👉 **[Open Canva Presentation](https://canva.link/p73r6vad7lybrjm)**
-
----
 
 ## 🚀 How to Run the Program
 
