@@ -221,3 +221,27 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ==========================================
+# Project-Specific Exclusions (Reports, Presentations, Caches)
+# ==========================================
+
+# Presentations & Slides
+*.pptx
+*.ppt
+*.key
+*PRESENTATION*
+*SLIDES*
+*.slide_images*
+.slide_images*/
+scratch/
+
+# Reports, Guides & PDFs
+*.pdf
+*REPORT*
+*GUIDE*
+data/*.txt
+!data/students_data.csv
+
+# Backups
+*.backup*
