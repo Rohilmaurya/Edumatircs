@@ -245,3 +245,6 @@ data/*.txt
 
 # Backups
 *.backup*
+
+# Understand Anything cache
+.ua/

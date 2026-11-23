@@ -1,5 +1,4 @@
 import math
-import os
 from modules.data_management import (
     load_students_data,
     get_all_student_ids,
@@ -168,8 +167,7 @@ def generate_class_summary_report(all_records=None, save_to_file=True):
     
     report_text = "\n".join(lines)
     if save_to_file:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        out_path = os.path.join(base_dir, "data", "student_analysis_report.txt")
+        out_path = "data/student_analysis_report.txt"
         with open(out_path, "w") as f:
             f.write(report_text)
             
