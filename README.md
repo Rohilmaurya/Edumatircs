@@ -53,7 +53,7 @@ python main.py
 ---
 
 ## 🧠 Python Concepts Used
-- **File Handling**: Pure Python `open()` with `csv.reader` and `csv.writer` for `data/students_data.csv`.
+- **File Handling**: Pure Python built-in `open()`, `readlines()`, and `write()` for persistent CSV storage in `data/students_data.csv` without `csv`, `os`, or `sys` modules.
 - **Recursion**:
   - `find_student_recursive(records, student_id, index=0)` in `data_management.py`.
   - `recursive_sum(numbers, index=0)` in `grades_and_averages.py`.
