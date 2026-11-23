@@ -1,6 +1,3 @@
-import os
-import sys
-
 from modules.data_management import (
     initialize_csv,
     load_students_data,
@@ -37,7 +34,7 @@ from modules.summary_and_output import (
 )
 
 def clear_screen():
-    os.system("cls" if os.name == "nt" else "clear")
+    print("\033[H\033[J", end="")
 
 def display_menu():
     print("\n" + "=" * 65)
@@ -423,7 +420,7 @@ def handle_summary_and_export():
         sid = input("Enter Student ID: ").strip()
         card_text = generate_student_report_card(sid, all_records)
         print("\n" + card_text)
-        card_filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "report_card_" + sid + ".txt")
+        card_filename = "data/report_card_" + sid + ".txt"
         with open(card_filename, "w") as f:
             f.write(card_text)
         print("\n[EXPORT COMPLETED] Student report card written to: " + card_filename)
@@ -453,7 +450,7 @@ def main():
             handle_summary_and_export()
         elif choice == "0":
             print("\nThank you for using the Student Performance Analysis System. Goodbye!")
-            sys.exit(0)
+            break
         else:
             print("\nInvalid choice. Please enter a number between 0 and 9.")
         input("\nPress Enter to return to main menu...")

@@ -1,22 +1,28 @@
-import csv
-import os
-
+DEFAULT_FILE_PATH = "data/students_data.csv"
 DEFAULT_SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Computer_Science", "English"]
 
+
 def get_csv_path():
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_dir, "data", "students_data.csv")
+    return DEFAULT_FILE_PATH
+
 
 def initialize_csv(file_path=None):
-    path = file_path if file_path else get_csv_path()
-    folder = os.path.dirname(path)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    if not os.path.exists(path) or os.path.getsize(path) == 0:
-        with open(path, mode="w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["Student_ID", "Name", "Batch", "Term"] + DEFAULT_SUBJECTS)
+    path = file_path if file_path else DEFAULT_FILE_PATH
+    needs_init = False
+    try:
+        with open(path, "r") as f:
+            content = f.read().strip()
+            if not content:
+                needs_init = True
+    except FileNotFoundError:
+        needs_init = True
+
+    if needs_init:
+        headers = ["Student_ID", "Name", "Batch", "Term"] + DEFAULT_SUBJECTS
+        with open(path, "w") as f:
+            f.write(",".join(headers) + "\n")
     return path
+
 
 def validate_student_record(record, subjects=None):
     subj_list = subjects if subjects else DEFAULT_SUBJECTS
@@ -34,60 +40,78 @@ def validate_student_record(record, subjects=None):
                 return False, "Invalid number for " + s
     return True, "Valid"
 
+
 def load_students_data(file_path=None):
-    path = file_path if file_path else get_csv_path()
-    if not os.path.exists(path):
+    path = file_path if file_path else DEFAULT_FILE_PATH
+    try:
+        with open(path, "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
         initialize_csv(path)
         return []
+
+    if not lines:
+        return []
+
+    header_line = lines[0].strip()
+    if not header_line:
+        return []
+
+    header = [h.strip() for h in header_line.split(",")]
+    subject_names = header[4:]
+
     records = []
-    with open(path, mode="r", newline="") as f:
-        reader = csv.reader(f)
-        header = next(reader, None)
-        if not header:
-            return []
-        subject_names = header[4:]
-        for row in reader:
-            if not row or len(row) < 4:
-                continue
-            item = {
-                "Student_ID": row[0].strip(),
-                "Name": row[1].strip(),
-                "Batch": row[2].strip(),
-                "Term": row[3].strip()
-            }
-            for i, subj in enumerate(subject_names):
-                idx = 4 + i
-                if idx < len(row) and row[idx].strip() != "":
-                    try:
-                        item[subj] = float(row[idx])
-                    except ValueError:
-                        item[subj] = 0.0
-                else:
+    for line in lines[1:]:
+        line = line.strip()
+        if not line:
+            continue
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) < 4:
+            continue
+        item = {
+            "Student_ID": parts[0],
+            "Name": parts[1],
+            "Batch": parts[2],
+            "Term": parts[3]
+        }
+        for i, subj in enumerate(subject_names):
+            idx = 4 + i
+            if idx < len(parts) and parts[idx] != "":
+                try:
+                    item[subj] = float(parts[idx])
+                except ValueError:
                     item[subj] = 0.0
-            records.append(item)
+            else:
+                item[subj] = 0.0
+        records.append(item)
     return records
 
+
 def save_all_records(records, file_path=None):
-    path = file_path if file_path else get_csv_path()
-    folder = os.path.dirname(path)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    path = file_path if file_path else DEFAULT_FILE_PATH
     headers = ["Student_ID", "Name", "Batch", "Term"] + DEFAULT_SUBJECTS
-    with open(path, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(headers)
+    with open(path, "w") as f:
+        f.write(",".join(headers) + "\n")
         for r in records:
             row = [
-                r.get("Student_ID", ""),
-                r.get("Name", ""),
-                r.get("Batch", ""),
-                r.get("Term", "")
+                str(r.get("Student_ID", "")),
+                str(r.get("Name", "")),
+                str(r.get("Batch", "")),
+                str(r.get("Term", ""))
             ]
             for s in DEFAULT_SUBJECTS:
                 val = r.get(s, 0.0)
-                row.append(str(int(val)) if float(val).is_integer() else str(round(float(val), 2)))
-            writer.writerow(row)
+                try:
+                    f_val = float(val)
+                    if f_val.is_integer():
+                        row.append(str(int(f_val)))
+                    else:
+                        row.append(str(round(f_val, 2)))
+                except (ValueError, TypeError):
+                    row.append("0")
+            f.write(",".join(row) + "\n")
     return True
+
 
 def add_student_record(record, file_path=None):
     is_valid, msg = validate_student_record(record)
@@ -102,6 +126,7 @@ def add_student_record(record, file_path=None):
     records.append(record)
     save_all_records(records, file_path)
     return True, "Record added successfully"
+
 
 def update_student_record(student_id, term, updated_fields, file_path=None):
     records = load_students_data(file_path)
@@ -122,6 +147,7 @@ def update_student_record(student_id, term, updated_fields, file_path=None):
         return False, "Record not found"
     save_all_records(records, file_path)
     return True, "Record updated successfully"
+
 
 def delete_student_record(student_id, term=None, file_path=None):
     records = load_students_data(file_path)
@@ -145,10 +171,12 @@ def delete_student_record(student_id, term=None, file_path=None):
     save_all_records(new_records, file_path)
     return True, "Deleted successfully"
 
+
 def get_student_records(student_id, file_path=None):
     records = load_students_data(file_path)
     sid = str(student_id).strip().lower()
     return list(filter(lambda r: r["Student_ID"].strip().lower() == sid, records))
+
 
 def get_all_student_ids(records=None, file_path=None):
     data = records if records is not None else load_students_data(file_path)
@@ -158,6 +186,7 @@ def get_all_student_ids(records=None, file_path=None):
         if sid and sid not in seen:
             seen.append(sid)
     return seen
+
 
 def find_student_recursive(records, student_id, index=0):
     if index >= len(records):
