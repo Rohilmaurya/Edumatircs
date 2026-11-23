@@ -1,13 +1,18 @@
-DEFAULT_FILE_PATH = "data/students_data.csv"
 DEFAULT_SUBJECTS = ["Mathematics", "Physics", "Chemistry", "Computer_Science", "English"]
 
 
 def get_csv_path():
-    return DEFAULT_FILE_PATH
+    try:
+        with open("data/students_data.csv", "r"):
+            return "data/students_data.csv"
+    except Exception:
+        pass
+    base = __file__.replace("\\", "/").rsplit("/", 2)[0]
+    return base + "/data/students_data.csv"
 
 
 def initialize_csv(file_path=None):
-    path = file_path if file_path else DEFAULT_FILE_PATH
+    path = file_path if file_path else get_csv_path()
     needs_init = False
     try:
         with open(path, "r") as f:
@@ -42,7 +47,7 @@ def validate_student_record(record, subjects=None):
 
 
 def load_students_data(file_path=None):
-    path = file_path if file_path else DEFAULT_FILE_PATH
+    path = file_path if file_path else get_csv_path()
     try:
         with open(path, "r") as f:
             lines = f.readlines()
@@ -88,7 +93,7 @@ def load_students_data(file_path=None):
 
 
 def save_all_records(records, file_path=None):
-    path = file_path if file_path else DEFAULT_FILE_PATH
+    path = file_path if file_path else get_csv_path()
     headers = ["Student_ID", "Name", "Batch", "Term"] + DEFAULT_SUBJECTS
     with open(path, "w") as f:
         f.write(",".join(headers) + "\n")

@@ -421,8 +421,14 @@ def handle_summary_and_export():
         card_text = generate_student_report_card(sid, all_records)
         print("\n" + card_text)
         card_filename = "data/report_card_" + sid + ".txt"
-        with open(card_filename, "w") as f:
-            f.write(card_text)
+        try:
+            with open(card_filename, "w") as f:
+                f.write(card_text)
+        except Exception:
+            base = __file__.replace("\\", "/").rsplit("/", 1)[0]
+            card_filename = base + "/data/report_card_" + sid + ".txt"
+            with open(card_filename, "w") as f:
+                f.write(card_text)
         print("\n[EXPORT COMPLETED] Student report card written to: " + card_filename)
 
 def main():

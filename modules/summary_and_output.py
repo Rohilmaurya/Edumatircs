@@ -168,7 +168,12 @@ def generate_class_summary_report(all_records=None, save_to_file=True):
     report_text = "\n".join(lines)
     if save_to_file:
         out_path = "data/student_analysis_report.txt"
-        with open(out_path, "w") as f:
-            f.write(report_text)
+        try:
+            with open(out_path, "w") as f:
+                f.write(report_text)
+        except Exception:
+            base = __file__.replace("\\", "/").rsplit("/", 2)[0]
+            with open(base + "/data/student_analysis_report.txt", "w") as f:
+                f.write(report_text)
             
     return report_text
