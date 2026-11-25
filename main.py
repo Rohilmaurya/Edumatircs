@@ -27,7 +27,6 @@ from modules.trend_detection import (
     extract_term_number
 )
 from modules.summary_and_output import (
-    compute_all_subjects_statistics,
     get_class_leaderboard,
     generate_student_report_card,
     generate_class_summary_report

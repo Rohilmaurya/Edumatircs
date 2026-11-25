@@ -1,4 +1,3 @@
-import math
 from modules.data_management import (
     load_students_data,
     get_all_student_ids,
@@ -27,7 +26,7 @@ def compute_subject_statistics(records, subject):
         if subject in r:
             scores.append(float(r[subject]))
     if not scores:
-        return {"Subject": subject, "Count": 0, "Mean": 0.0, "Median": 0.0, "Std_Dev": 0.0, "Min": 0.0, "Max": 0.0, "Pass_Rate": 0.0}
+        return {"Subject": subject, "Mean": 0.0, "Median": 0.0, "Pass_Rate": 0.0}
         
     scores.sort()
     n = len(scores)
@@ -38,20 +37,13 @@ def compute_subject_statistics(records, subject):
     else:
         median = (scores[n // 2 - 1] + scores[n // 2]) / 2.0
         
-    variance = sum((x - mean) ** 2 for x in scores) / n
-    std_dev = math.sqrt(variance)
-    
     passed = len(list(filter(lambda x: x >= 50.0, scores)))
     pass_rate = (passed / n) * 100.0
     
     return {
         "Subject": subject,
-        "Count": n,
         "Mean": round(mean, 2),
         "Median": round(median, 2),
-        "Std_Dev": round(std_dev, 2),
-        "Min": round(min(scores), 2),
-        "Max": round(max(scores), 2),
         "Pass_Rate": round(pass_rate, 2)
     }
 
@@ -154,7 +146,7 @@ def generate_class_summary_report(all_records=None, save_to_file=True):
         
     lines.append("\n3. SUBJECT STATISTICS:")
     for s, stat in subject_stats.items():
-        lines.append("   " + str(s).ljust(18) + " Mean: " + str(stat["Mean"]) + " | Median: " + str(stat["Median"]) + " | StdDev: " + str(stat["Std_Dev"]) + " | Pass Rate: " + str(stat["Pass_Rate"]) + "%")
+        lines.append("   " + str(s).ljust(18) + " Mean: " + str(stat["Mean"]) + " | Median: " + str(stat["Median"]) + " | Pass Rate: " + str(stat["Pass_Rate"]) + "%")
         
     lines.append("\n4. GRADE DISTRIBUTION:")
     for g, c in grade_dist.items():
