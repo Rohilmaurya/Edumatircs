@@ -7,7 +7,12 @@ from modules.data_management import (
     get_student_records,
     get_all_student_ids,
     find_student_recursive,
-    DEFAULT_SUBJECTS
+    validate_roll_number,
+    validate_student_name,
+    validate_batch,
+    validate_and_format_term,
+    DEFAULT_SUBJECTS,
+    MAX_NAME_LENGTH
 )
 from modules.grades_and_averages import (
     compute_student_term_average,
@@ -35,6 +40,18 @@ from modules.summary_and_output import (
 def clear_screen():
     print("\033[H\033[J", end="")
 
+
+class EscapeToMenu(Exception):
+    pass
+
+
+def prompt_input(prompt):
+    val_str = input(prompt).strip()
+    if val_str.lower() == "esc" or val_str == "\x1b":
+        raise EscapeToMenu()
+    return val_str
+
+
 def display_menu():
     print("\n" + "=" * 65)
     print("      STUDENT PERFORMANCE ANALYSIS SYSTEM - 2026CSAE100")
@@ -50,11 +67,14 @@ def display_menu():
     print("  [8] Multi-Term Trend Detection")
     print("  [9] Class Summary & Report Card Export")
     print("  [0] Exit Application")
+    print("-" * 65)
+    print("  Tip: Type 'esc' at any prompt to cancel & return to this menu")
     print("=" * 65)
+
 
 def get_float_input(prompt, min_val=0.0, max_val=100.0):
     while True:
-        val_str = input(prompt).strip()
+        val_str = prompt_input(prompt)
         try:
             val = float(val_str)
             if min_val <= val <= max_val:
@@ -105,27 +125,44 @@ def handle_view_all():
 
 def handle_add_record():
     print("\n--- Add New Student Record ---")
-    sid = input("Enter Student ID (e.g. S26CSEU1936 or 1936): ").strip()
-    if not sid:
-        print("Student ID cannot be empty.")
-        return
-    name = input("Enter Student Name: ").strip()
-    if not name:
-        print("Student Name cannot be empty.")
-        return
-    batch = input("Enter Batch (Default: 56-S28): ").strip()
-    if not batch:
-        batch = "56-S28"
-    term = input("Enter Term (e.g. Term 1, Term 2, Term 3): ").strip()
-    if not term:
-        print("Term cannot be empty.")
-        return
-    
-    existing = get_student_records(sid)
-    for r in existing:
-        if r.get("Term", "").strip().lower() == term.lower():
-            print("Error: Record for student " + sid + " in " + term + " already exists.")
-            return
+    print("(Type 'esc' at any prompt to cancel and return to main menu)")
+    while True:
+        sid = prompt_input("Enter Roll No. / Student ID (numeric, max 4 digits, e.g. 1936): ")
+        valid_id, id_msg = validate_roll_number(sid)
+        if valid_id:
+            break
+        print("Error: " + id_msg)
+
+    while True:
+        name_raw = prompt_input("Enter Student Name (letters only, max " + str(MAX_NAME_LENGTH) + " chars): ")
+        valid_name, name_msg = validate_student_name(name_raw)
+        if valid_name:
+            name = " ".join(name_raw.split())
+            break
+        print("Error: " + name_msg)
+
+    while True:
+        batch = prompt_input("Enter Batch (Default: 56-S28): ")
+        if not batch:
+            batch = "56-S28"
+            break
+        valid_batch, batch_msg = validate_batch(batch)
+        if valid_batch:
+            break
+        print("Error: " + batch_msg)
+
+    while True:
+        term_raw = prompt_input("Enter Term (e.g. Term 1, Term 2, Term 3): ")
+        valid_term, formatted_term, term_msg = validate_and_format_term(term_raw)
+        if not valid_term:
+            print("Error: " + term_msg)
+            continue
+        existing = get_student_records(sid)
+        if any(r.get("Term", "").strip().lower() == formatted_term.lower() for r in existing):
+            print("Error: Record for student " + sid + " in " + formatted_term + " already exists.")
+            continue
+        term = formatted_term
+        break
 
     new_rec = {
         "Student_ID": sid,
@@ -145,7 +182,8 @@ def handle_add_record():
 
 def handle_update_record():
     print("\n--- Update Student Record ---")
-    sid = input("Enter Student ID to update: ").strip()
+    print("(Type 'esc' at any prompt to cancel and return to main menu)")
+    sid = prompt_input("Enter Student ID to update: ")
     if not sid:
         print("Student ID cannot be empty.")
         return
@@ -156,7 +194,7 @@ def handle_update_record():
     print("\nTerms available for " + sid + ":")
     for r in existing:
         print("  - " + r.get("Term", ""))
-    term = input("Enter Term to update: ").strip()
+    term = prompt_input("Enter Term to update: ")
     target_rec = None
     for r in existing:
         if r.get("Term", "").strip().lower() == term.lower():
@@ -170,7 +208,7 @@ def handle_update_record():
     updated_fields = {}
     for s in DEFAULT_SUBJECTS:
         current_val = target_rec.get(s, 0.0)
-        user_input = input("Enter new marks for " + s + " [Current: " + str(current_val) + "] (Press Enter to keep): ").strip()
+        user_input = prompt_input("Enter new marks for " + s + " [Current: " + str(current_val) + "] (Press Enter to keep): ")
         if user_input != "":
             try:
                 new_val = float(user_input)
@@ -191,7 +229,8 @@ def handle_update_record():
 
 def handle_delete_record():
     print("\n--- Delete Student Record ---")
-    sid = input("Enter Student ID to delete: ").strip()
+    print("(Type 'esc' at any prompt to cancel and return to main menu)")
+    sid = prompt_input("Enter Student ID to delete: ")
     if not sid:
         print("Student ID cannot be empty.")
         return
@@ -202,8 +241,8 @@ def handle_delete_record():
     print("\nFound " + str(len(existing)) + " record(s) for " + sid + ":")
     for r in existing:
         print("  - Term: " + r.get("Term", "") + " | Batch: " + r.get("Batch", ""))
-    term_input = input("\nEnter specific Term to delete (or press Enter to delete ALL records of this student): ").strip()
-    confirm = input("Are you sure you want to proceed with deletion? (y/n): ").strip().lower()
+    term_input = prompt_input("\nEnter specific Term to delete (or press Enter to delete ALL records of this student): ")
+    confirm = prompt_input("Are you sure you want to proceed with deletion? (y/n): ").lower()
     if confirm != "y":
         print("Deletion cancelled.")
         return
@@ -216,7 +255,7 @@ def handle_delete_record():
 
 def handle_search_record():
     print("\n--- Search Student Record (Recursive Search) ---")
-    sid = input("Enter Student ID to search: ").strip()
+    sid = prompt_input("Enter Student ID to search (or 'esc' for menu): ")
     if not sid:
         print("Student ID cannot be empty.")
         return
@@ -237,7 +276,7 @@ def handle_search_record():
 
 def handle_averages_and_grades():
     print("\n--- Student Averages & Grades ---")
-    choice = input("Enter Student ID (or type 'ALL' to view cohort summary): ").strip()
+    choice = prompt_input("Enter Student ID (or 'ALL' for cohort summary, 'esc' for menu): ")
     if not choice:
         print("Input cannot be empty.")
         return
@@ -286,7 +325,7 @@ def handle_averages_and_grades():
 
 def handle_weak_areas():
     print("\n--- Diagnose Weak Areas (Dual Benchmark) ---")
-    sid = input("Enter Student ID to diagnose: ").strip()
+    sid = prompt_input("Enter Student ID to diagnose (or 'esc' for menu): ")
     if not sid:
         print("Student ID cannot be empty.")
         return
@@ -301,7 +340,7 @@ def handle_weak_areas():
         print("\nMultiple terms found for " + sid + ":")
         for idx, r in enumerate(s_recs, 1):
             print("  [" + str(idx) + "] " + r.get("Term", ""))
-        pick = input("Select term number (Press Enter for latest - " + target_rec.get("Term", "") + "): ").strip()
+        pick = prompt_input("Select term number (Press Enter for latest - " + target_rec.get("Term", "") + ", 'esc' for menu): ")
         if pick != "":
             try:
                 pick_idx = int(pick) - 1
@@ -341,7 +380,7 @@ def handle_weak_areas():
 
 def handle_trend():
     print("\n--- Multi-Term Trend Detection ---")
-    sid = input("Enter Student ID (or type 'COHORT' to view cohort progression): ").strip()
+    sid = prompt_input("Enter Student ID (or 'COHORT' for cohort progression, 'esc' for menu): ")
     if not sid:
         print("Input cannot be empty.")
         return
@@ -414,9 +453,15 @@ def handle_summary_and_export():
     report_text = generate_class_summary_report(all_records, save_to_file=True)
     print("\n" + report_text)
     print("\n[EXPORT COMPLETED] Full summary written to: data/student_analysis_report.txt")
-    export_card = input("\nWould you like to export an individual student's report card to a text file? (y/n): ").strip().lower()
+    export_card = prompt_input("\nWould you like to export an individual student's report card to a text file? (y/n, 'esc' for menu): ").lower()
     if export_card == "y":
-        sid = input("Enter Student ID: ").strip()
+        sid = prompt_input("Enter Student ID (or 'esc' for menu): ")
+        if not sid:
+            print("Student ID cannot be empty.")
+            return
+        if not get_student_records(sid):
+            print("No student found with ID: " + sid)
+            return
         card_text = generate_student_report_card(sid, all_records)
         print("\n" + card_text)
         card_filename = "data/report_card_" + sid + ".txt"
@@ -435,29 +480,36 @@ def main():
     while True:
         display_menu()
         choice = input("\nEnter your choice (0-9): ").strip()
-        if choice == "1":
-            handle_view_all()
-        elif choice == "2":
-            handle_add_record()
-        elif choice == "3":
-            handle_update_record()
-        elif choice == "4":
-            handle_delete_record()
-        elif choice == "5":
-            handle_search_record()
-        elif choice == "6":
-            handle_averages_and_grades()
-        elif choice == "7":
-            handle_weak_areas()
-        elif choice == "8":
-            handle_trend()
-        elif choice == "9":
-            handle_summary_and_export()
-        elif choice == "0":
-            print("\nThank you for using the Student Performance Analysis System. Goodbye!")
-            break
-        else:
-            print("\nInvalid choice. Please enter a number between 0 and 9.")
+        if choice.lower() == "esc" or choice == "\x1b":
+            print("\nAlready at the main menu.")
+            continue
+        try:
+            if choice == "1":
+                handle_view_all()
+            elif choice == "2":
+                handle_add_record()
+            elif choice == "3":
+                handle_update_record()
+            elif choice == "4":
+                handle_delete_record()
+            elif choice == "5":
+                handle_search_record()
+            elif choice == "6":
+                handle_averages_and_grades()
+            elif choice == "7":
+                handle_weak_areas()
+            elif choice == "8":
+                handle_trend()
+            elif choice == "9":
+                handle_summary_and_export()
+            elif choice == "0":
+                print("\nThank you for using the Student Performance Analysis System. Goodbye!")
+                break
+            else:
+                print("\nInvalid choice. Please enter a number between 0 and 9.")
+        except EscapeToMenu:
+            print("\n[Paused] Returning to main menu...")
+            continue
         input("\nPress Enter to return to main menu...")
 
 if __name__ == "__main__":
